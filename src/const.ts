@@ -11,7 +11,7 @@ export const frameRate = 60;
 
 export const dotUnit = 4;
 
-export const smallFont = "Arial";
+export const smallFont = "35-55 Font";
 
 export const songLength = midi.header.ticksToSeconds(
   Math.max(

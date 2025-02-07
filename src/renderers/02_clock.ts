@@ -5,9 +5,13 @@ import { dotUnit } from "../const.ts";
 import { useGraphicsContext } from "../utils.ts";
 import { DrumDefinition, drumDefinition, mainDrum } from "../drum.ts";
 import { midi } from "../midi.ts";
-import { clip, easeOutQuint } from "../easing.ts";
+import { clip, easeInQuint, easeOutQuint } from "../easing.ts";
+import timeline from "../assets/timeline.mid?mid";
 
 const chordTrack = midi.tracks.find((track) => track.name === "LABS")!;
+const visualizerTimeline = timeline.tracks.find(
+  (track) => track.name === "visualizer",
+)!;
 
 let graphics: p5.Graphics;
 
@@ -15,11 +19,28 @@ const screenDotUnit = dotUnit;
 
 const chordThreshold = 53;
 
+const activateMidi = 61;
+
+const noMeasureMidi = 72;
+const segmentMidi = 73;
+const noSegmentMidi = 74;
+
 export const draw = import.meta.hmrify((p: p5, state: State) => {
   if (!graphics) {
     graphics = p.createGraphics(p.width, p.height);
     graphics.scale(1 / screenDotUnit);
   }
+
+  const activateNote = visualizerTimeline.notes.find(
+    (note) =>
+      note.midi === activateMidi &&
+      note.ticks <= state.currentTick &&
+      note.ticks + note.durationTicks > state.currentTick,
+  );
+  if (!activateNote) {
+    return;
+  }
+
   graphics.clear();
   using _context = useGraphicsContext(graphics);
   graphics.noSmooth();
@@ -38,18 +59,69 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   graphics.strokeWeight(dotUnit * 2);
   graphics.circle(0, 0, size * 2);
 
-  graphics.line(0, 0, ...getXY(state.currentMeasure, size));
-  for (const [track, definition] of drumDefinition) {
-    const drumsInCurrentMeasure = track.notes.filter((v) =>
-      [0, -1].includes(
-        Math.floor(midi.header.ticksToMeasures(v.ticks)) -
-          Math.floor(state.currentMeasure),
+  graphics.line(
+    0,
+    0,
+    ...getXY(
+      visualizerTimeline.notes.some(
+        (note) =>
+          note.midi === noMeasureMidi &&
+          note.ticks <= state.currentTick &&
+          note.ticks + note.durationTicks > state.currentTick,
+      )
+        ? 0
+        : state.currentMeasure % 1,
+      size - dotUnit * 4,
+    ),
+  );
+
+  const currentSegmentNote = visualizerTimeline.notes.find(
+    (note) =>
+      note.midi === segmentMidi &&
+      note.ticks <= state.currentTick &&
+      note.ticks + note.durationTicks > state.currentTick,
+  );
+  if (currentSegmentNote) {
+    graphics.line(
+      0,
+      0,
+      ...getXY(
+        p.map(
+          state.currentTick,
+          currentSegmentNote.ticks,
+          currentSegmentNote.ticks + currentSegmentNote.durationTicks,
+          0,
+          1,
+        ),
+        size * 0.5,
       ),
+    );
+  }
+  if (
+    visualizerTimeline.notes.some(
+      (note) =>
+        note.midi === noSegmentMidi &&
+        note.ticks <= state.currentTick &&
+        note.ticks + note.durationTicks > state.currentTick,
+    )
+  ) {
+    graphics.line(0, 0, ...getXY(0, size * 0.5));
+  }
+
+  for (const [track, definition] of drumDefinition) {
+    const drumsInCurrentMeasure = track.notes.filter(
+      (v) =>
+        v.ticks >= activateNote.ticks &&
+        v.ticks < activateNote.ticks + activateNote.durationTicks &&
+        [0, -1].includes(
+          Math.floor(midi.header.ticksToMeasures(v.ticks)) -
+            Math.floor(state.currentMeasure),
+        ),
     );
     const midiToName = Object.fromEntries(
       Object.entries(definition).map(([k, v]) => [v, k]),
     );
-    const order = ["kick", "snare", "hihat", "clap"];
+    const order = ["lowTom", "highTom", "kick", "snare", "hihat", "clap"];
     for (const drum of drumsInCurrentMeasure.toSorted(
       (a, b) =>
         order.indexOf(midiToName[a.midi]) - order.indexOf(midiToName[b.midi]),
@@ -130,6 +202,31 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
           graphics.line(ix, iy, ox, oy);
           break;
         }
+        case "openHihat": {
+          const factor =
+            passedMeasures > 0 ? 1.5 - easeOutQuint(passedMeasures * 4) / 2 : 0;
+          using _context = useGraphicsContext(graphics);
+          const distance = (dotUnit * 8 * factor) / Math.sqrt(2);
+          const [ix, iy] = getXY(
+            midi.header.ticksToMeasures(drum.ticks),
+            size - distance,
+          );
+          const [ox, oy] = getXY(
+            midi.header.ticksToMeasures(drum.ticks),
+            size + distance,
+          );
+          const [sx, sy] = getXY(
+            midi.header.ticksToMeasures(drum.ticks) + 0.25,
+            distance,
+          );
+          graphics.noFill();
+          graphics.stroke(255, 255 * (1 - clip(postAnimation * 4)));
+          graphics.strokeWeight(dotUnit);
+          graphics.line(ix + sx, iy + sy, ox - sx, oy - sy);
+          graphics.line(ix - sx, iy - sy, ox + sx, oy + sy);
+
+          break;
+        }
         case "clap": {
           if (passedMeasures <= 0) break;
           const factor = 1.5 - easeOutQuint(passedMeasures * 4) / 2;
@@ -147,8 +244,50 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
           );
           break;
         }
+        case "highTom": {
+          if (existsInNextMeasure) break;
+          const factor =
+            passedMeasures > 0 ? 1.5 - easeOutQuint(passedMeasures * 4) / 2 : 1;
+          const angle = midi.header.ticksToMeasures(drum.ticks);
+          const [x, y] = getXY(angle, size + dotUnit * 0.75);
+          using _context = useGraphicsContext(graphics);
+          graphics.fill(255);
+          graphics.noStroke();
+          graphics.arc(
+            x,
+            y,
+            dotUnit * 4 * factor,
+            dotUnit * 4 * factor,
+            (angle + 0.45) * Math.PI * 2,
+            (angle + 1.05) * Math.PI * 2,
+          );
+          break;
+        }
+        case "lowTom": {
+          if (existsInNextMeasure) break;
+          const factor =
+            passedMeasures > 0 ? 1.5 - easeOutQuint(passedMeasures * 4) / 2 : 1;
+          const angle = midi.header.ticksToMeasures(drum.ticks);
+          const [x, y] = getXY(angle, size - dotUnit * 0.75);
+          using _context = useGraphicsContext(graphics);
+          graphics.fill(255);
+          graphics.noStroke();
+          graphics.arc(
+            x,
+            y,
+            dotUnit * 4 * factor,
+            dotUnit * 4 * factor,
+            (angle - 0.05) * Math.PI * 2,
+            (angle + 0.55) * Math.PI * 2,
+          );
+          break;
+        }
         case "dial": {
           using _context = useGraphicsContext(graphics);
+
+          graphics.noFill();
+          graphics.stroke(255, 255 * (1 - clip(passedMeasures)));
+          graphics.strokeWeight(dotUnit * 2);
           for (const [i, o] of [
             [-16, -12],
             [12, 16],
@@ -161,22 +300,77 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
               midi.header.ticksToMeasures(drum.ticks),
               size + dotUnit * o,
             );
-            graphics.noFill();
-            graphics.stroke(255, 255 * (1 - clip(passedMeasures)));
-            graphics.strokeWeight(dotUnit * 2);
             graphics.line(ix, iy, ox, oy);
           }
+          const [x, y] = getXY(midi.header.ticksToMeasures(drum.ticks), size);
+          graphics.circle(
+            x,
+            y,
+            p.lerp(dotUnit * 16, dotUnit * 20, easeOutQuint(passedMeasures)),
+          );
 
           break;
         }
         case "star": {
-          const [x, y] = getXY(midi.header.ticksToMeasures(drum.ticks), size);
           using _context = useGraphicsContext(graphics);
-          graphics.stroke(255, 255 * (1 - clip(passedMeasures)));
-          graphics.noFill();
+          const starSize = size * 2 - dotUnit * 20;
+          const divs = 16;
           graphics.strokeWeight(dotUnit * 2);
-          graphics.circle(x, y, dotUnit * 16);
+          graphics.noFill();
+          const shift = Math.floor(passedMeasures * 64) / 2;
+          graphics.stroke(255, 255 * (1 - easeInQuint(passedMeasures / 2)));
+          graphics.strokeCap(p.SQUARE);
+          for (let i = 0; i < divs; i++) {
+            graphics.arc(
+              0,
+              0,
+              starSize,
+              starSize,
+              Math.PI * 2 * ((i + shift) / divs),
+              Math.PI * 2 * ((i + shift + 0.5) / divs),
+            );
+          }
+          graphics.stroke(255, 255 * (1 - clip(passedMeasures)));
+          const [x, y] = getXY(midi.header.ticksToMeasures(drum.ticks), size);
+          graphics.circle(
+            x,
+            y,
+            p.lerp(dotUnit * 12, dotUnit * 20, easeOutQuint(passedMeasures)),
+          );
           break;
+        }
+        case "cymbal": {
+          if (drum.ticks > state.currentTick) break;
+          using _context = useGraphicsContext(graphics);
+          graphics.strokeWeight(dotUnit * 2 * (1 - clip(passedMeasures)));
+          graphics.noFill();
+          graphics.stroke(255, 255 * (1 - clip(passedMeasures * 2)));
+          graphics.circle(
+            0,
+            0,
+            p.lerp(
+              size * 2,
+              size * 2 + dotUnit * 32,
+              easeOutQuint(passedMeasures),
+            ),
+          );
+          break;
+        }
+        case "miniCymbal": {
+          if (drum.ticks > state.currentTick) break;
+          using _context = useGraphicsContext(graphics);
+          graphics.strokeWeight(dotUnit * 2 * (1 - clip(passedMeasures)));
+          graphics.noFill();
+          graphics.stroke(255, 255 * (1 - clip(passedMeasures * 2)));
+          graphics.circle(
+            0,
+            0,
+            p.lerp(
+              size * 2,
+              size * 2 - dotUnit * 32,
+              easeOutQuint(passedMeasures),
+            ),
+          );
         }
       }
     }
