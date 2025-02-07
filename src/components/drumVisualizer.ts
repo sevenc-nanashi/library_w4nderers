@@ -3,7 +3,7 @@ import type { Note } from "@tonejs/midi/dist/Note";
 import type p5 from "p5";
 import { dotUnit, frameRate } from "../const.ts";
 import { easeInQuint, easeOutQuint } from "../easing";
-import { midi } from "../midi";
+import midi from "../assets/main.mid?mid";
 import type { State } from "../state";
 
 const mainDrum = midi.tracks.find((track) => track.name === "Sitala")!;
