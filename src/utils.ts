@@ -9,3 +9,16 @@ export const useGraphicsContext = (p: {
     },
   };
 };
+
+export const saturate = (
+  rgb: readonly [number, number, number],
+  amount: number,
+): [number, number, number] => {
+  const [r, g, b] = rgb;
+  const avg = Math.max(r, g, b);
+  return [
+    avg + amount * (r - avg),
+    avg + amount * (g - avg),
+    avg + amount * (b - avg),
+  ];
+};

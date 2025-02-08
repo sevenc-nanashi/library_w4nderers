@@ -11,7 +11,11 @@ export const frameRate = 60;
 
 export const dotUnit = 4;
 
-export const smallFont = "35-55 Font";
+export const smallFont = "美咲ゴシック";
+
+export const reiColor = [255, 192, 64] as const;
+export const tycColor = [128, 192, 255] as const;
+export const colors = [reiColor, tycColor] as const;
 
 export const songLength = midi.header.ticksToSeconds(
   Math.max(

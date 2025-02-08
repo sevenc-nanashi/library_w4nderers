@@ -1,12 +1,13 @@
 import p5 from "p5";
 import { State } from "../state.ts";
-import { drumVisualizer } from "../components/drumVisualizer.ts";
-import { dotUnit } from "../const.ts";
-import { useGraphicsContext } from "../utils.ts";
+import { colors, dotUnit } from "../const.ts";
+import { saturate, useGraphicsContext } from "../utils.ts";
 import { DrumDefinition, drumDefinition, mainDrum } from "../drum.ts";
 import { midi } from "../midi.ts";
 import { clip, easeInQuint, easeOutQuint } from "../easing.ts";
 import timeline from "../assets/timeline.mid?mid";
+import { characterMidi, characterTimeline } from "../tracks.ts";
+import { Note } from "@tonejs/midi/dist/Note";
 
 const chordTrack = midi.tracks.find((track) => track.name === "LABS")!;
 const visualizerTimeline = timeline.tracks.find(
@@ -45,17 +46,56 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   using _context = useGraphicsContext(graphics);
   graphics.noSmooth();
 
-  const getXY = (measure: number, size: number): [number, number] => {
-    return [
-      Math.cos(measure * Math.PI * 2 - Math.PI * 0.5) * size,
-      Math.sin(measure * Math.PI * 2 - Math.PI * 0.5) * size,
-    ];
-  };
+  const size = graphics.height * 0.3;
 
   graphics.translate(graphics.width / 2, graphics.height * 0.4);
-  const size = graphics.height * 0.3;
+  drawChord(p, state, size);
+  drawClock(p, state, size);
+  drawDrum(p, state, size, activateNote);
+
+  {
+    using _context = useGraphicsContext(p);
+    p.noSmooth();
+    p.image(
+      graphics,
+      0,
+      0,
+      p.width,
+      p.height,
+      0,
+      0,
+      graphics.width / screenDotUnit,
+      graphics.height / screenDotUnit,
+    );
+  }
+});
+
+const drawClock = (p: p5, state: State, size: number) => {
+  const colorNote = characterTimeline.notes.find(
+    (timelineNote) =>
+      timelineNote.ticks <= state.currentTick &&
+      state.currentTick < timelineNote.ticks + timelineNote.durationTicks &&
+      timelineNote.midi >= characterMidi &&
+      timelineNote.midi < characterMidi + colors.length,
+  );
+  const primaryColor: readonly [number, number, number] = colorNote
+    ? colors[colorNote.midi - characterMidi]
+    : ([255, 255, 255] as const);
+
   graphics.noFill();
-  graphics.stroke(255);
+  graphics.stroke(
+    ...saturate(
+      primaryColor,
+      colorNote
+        ? easeOutQuint(
+            (state.currentMeasure -
+              midi.header.ticksToMeasures(colorNote.ticks)) *
+              4,
+          ) * 0.5
+        : 0,
+    ),
+    255,
+  );
   graphics.strokeWeight(dotUnit * 2);
   graphics.circle(0, 0, size * 2);
 
@@ -107,7 +147,9 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   ) {
     graphics.line(0, 0, ...getXY(0, size * 0.5));
   }
+};
 
+const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
   for (const [track, definition] of drumDefinition) {
     const drumsInCurrentMeasure = track.notes.filter(
       (v) =>
@@ -375,7 +417,9 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
       }
     }
   }
+};
 
+const drawChord = (p: p5, state: State, size: number) => {
   const currentChordNotes = chordTrack.notes
     .filter(
       (v) =>
@@ -384,6 +428,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
         v.ticks + v.durationTicks > state.currentTick,
     )
     .toSorted((a, b) => a.midi - b.midi);
+
   if (currentChordNotes.length > 0) {
     const degree = currentChordNotes
       .map((note) => (note.midi % 12) / 12)
@@ -435,23 +480,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
       }
     }
   }
-
-  {
-    using _context = useGraphicsContext(p);
-    p.noSmooth();
-    p.image(
-      graphics,
-      0,
-      0,
-      p.width,
-      p.height,
-      0,
-      0,
-      graphics.width / screenDotUnit,
-      graphics.height / screenDotUnit,
-    );
-  }
-});
+};
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const lerpWithLoop = (a: number, b: number, t: number) => {
@@ -462,6 +491,12 @@ const lerpWithLoop = (a: number, b: number, t: number) => {
     return lerp(a, b - 1, t) + 1;
   }
   return lerp(a, b + 1, t) - 1;
+};
+const getXY = (measure: number, size: number): [number, number] => {
+  return [
+    Math.cos(measure * Math.PI * 2 - Math.PI * 0.5) * size,
+    Math.sin(measure * Math.PI * 2 - Math.PI * 0.5) * size,
+  ];
 };
 
 if (import.meta.hot) {

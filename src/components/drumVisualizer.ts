@@ -1,35 +1,20 @@
 import type { Track } from "@tonejs/midi";
 import type { Note } from "@tonejs/midi/dist/Note";
 import type p5 from "p5";
-import { dotUnit, frameRate } from "../const.ts";
+import { colors, dotUnit, frameRate, reiColor, tycColor } from "../const.ts";
 import { easeInQuint, easeOutQuint } from "../easing";
 import midi from "../assets/main.mid?mid";
 import type { State } from "../state";
-import { cymbal } from "../drum.ts";
+import { cymbal, drumDefinition } from "../drum.ts";
+import timeline from "../assets/timeline.mid?mid";
+import { saturate } from "../utils.ts";
+import { characterMidi, characterTimeline } from "../tracks.ts";
 
 const mainDrum = midi.tracks.find((track) => track.name === "Sitala")!;
 const subDrum = midi.tracks.find((track) => track.name === "RVK-808")!;
-
-type DrumDefinition = {
-  kick: number;
-  snare: number;
-  hihat: number;
-  openHihat: number;
-  clap: number;
-  star: number;
-};
-const drumDefinition = [
-  [
-    mainDrum,
-    {
-      kick: 36,
-      snare: 37,
-      hihat: 38,
-      openHihat: 41,
-      clap: 40,
-    },
-  ],
-] as [midi: Track, definition: Partial<DrumDefinition>][];
+const visualizerTimeline = timeline.tracks.find(
+  (track) => track.name === "visualizer",
+)!;
 
 const cymbalWidth = dotUnit * 6;
 const cymbalPadding = dotUnit * 1;
@@ -37,11 +22,8 @@ const cymbalWidthPadded = cymbalWidth + cymbalPadding;
 const cymbalSeparatorWidth = dotUnit * 1;
 const cellWidth = dotUnit * 12;
 const cellHeight = cellWidth;
-const shiftHeight = cellHeight + dotUnit * 2;
 const cellPadding = dotUnit * 3;
 const cellSectionSize = cellWidth * 8 + cellPadding * 7 + dotUnit * 2;
-
-const color = [255, 192, 64];
 
 export const drumVisualizerWidth =
   cymbalWidthPadded * 2 + cellSectionSize + cymbalSeparatorWidth * 2;
@@ -215,17 +197,28 @@ export const drumVisualizer = (
           : (measure - currentMeasure - 1) * 64;
     }
     const progress = Math.min((currentMeasure - measure) * 16, 1);
-    let saturation = 1 - alpha / 255;
+    let saturation = 0.5 - (alpha / 255) * 0.5;
     if (sixteenthType !== "none") {
       saturation += 0.5;
       saturation = Math.min(saturation, 1);
     }
-    graphics.fill(
-      255 - (255 - color[0]) * saturation,
-      255 - (255 - color[1]) * saturation,
-      255 - (255 - color[2]) * saturation,
+    const color = characterTimeline.notes.find(
+      (timelineNote) =>
+        timelineNote.ticks <= note.ticks &&
+        note.ticks < timelineNote.ticks + timelineNote.durationTicks &&
+        timelineNote.midi >= characterMidi &&
+        timelineNote.midi < characterMidi + colors.length,
+    )?.midi;
+    const primaryColor = colors[color ? color - characterMidi : 0];
+    const borderColor = [
+      ...saturate(primaryColor, saturation),
       alpha * progress,
-    );
+    ] as [number, number, number, number];
+    const mainColor = [
+      ...saturate(primaryColor, saturation * 0.7 + 0.3),
+      alpha * progress,
+    ] as [number, number, number, number];
+    graphics.fill(...mainColor);
     if (noteType === "star") {
       const height = cellHeight - dotUnit * 7;
       graphics.rect(
@@ -354,6 +347,7 @@ export const drumVisualizer = (
         if (openHihats.some((openHihat) => openHihat.ticks === note.ticks)) {
           continue;
         }
+        graphics.fill(...borderColor);
         if (sixteenthType === "none" || sixteenthType === "left") {
           graphics.rect(x, y, cellWidth / 2, dotUnit);
           graphics.rect(x, y + cellHeight - dotUnit, cellWidth / 2, dotUnit);
@@ -372,6 +366,7 @@ export const drumVisualizer = (
         break;
       }
       case "openHihat": {
+        graphics.fill(...borderColor);
         const partWidth = (cellWidth - dotUnit) / 2;
         const partHeight = (cellHeight - dotUnit) / 2;
         if (sixteenthType === "none" || sixteenthType === "left") {

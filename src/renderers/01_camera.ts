@@ -56,11 +56,20 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
       p.height - padding - cornerSize,
     );
   }
+  p.textFont(smallFont);
+  p.textSize(dotUnit * 6);
+  p.fill(255);
   {
     using _context = useGraphicsContext(p);
-    p.textFont(smallFont);
-    p.textSize(dotUnit * 6);
-    p.fill(255);
+    p.textAlign(p.LEFT, p.TOP);
+    p.text(
+      [`library.w4nderers`].join(" | "),
+      padding + cornerPadding,
+      padding + cornerPadding,
+    );
+  }
+  {
+    using _context = useGraphicsContext(p);
     p.textAlign(p.LEFT, p.BOTTOM);
     p.text(
       [
