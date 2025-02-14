@@ -4,14 +4,15 @@ import timeline from "../assets/timeline.mid?mid";
 
 const flashTimeline = timeline.tracks.find((track) => track.name === "flash")!;
 const flashMidi = 48;
-const fadeMidi = 49;
+const fadeMidi = 60;
 
 export const draw = import.meta.hmrify((p: p5, state: State) => {
-  const flashNote = flashTimeline.notes.find(
+  const flashNote = flashTimeline.notes.findLast(
     (note) =>
       note.ticks <= state.currentTick &&
       state.currentTick < note.ticks + note.durationTicks &&
-      note.midi === flashMidi,
+      note.midi >= flashMidi &&
+      note.midi < flashMidi + 12,
   );
   if (flashNote) {
     p.background(

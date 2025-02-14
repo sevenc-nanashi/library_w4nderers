@@ -4,7 +4,7 @@ import { dotUnit } from "../const";
 import { clip, easeOutQuint } from "../easing";
 import { midi } from "../midi";
 import type { State } from "../state";
-import { useGraphicsContext } from "../utils";
+import { useRendererContext } from "../utils";
 
 const track = midi.tracks.find((track) => track.name === "Enhance (Vital)")!;
 
@@ -64,8 +64,8 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
       (fadeOutDuration - keepDuration),
   );
 
-  using _context = useGraphicsContext(p);
-  p.translate(p.width / 2, p.height * 0.4);
+  using _context = useRendererContext(p);
+  p.translate(p.width / 2, p.height * 0.45);
 
   const leftX = -width / 2;
   const rightX = +width / 2;

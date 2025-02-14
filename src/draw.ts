@@ -47,9 +47,10 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   } catch (e) {
     p.push();
     p.background([255, 0, 0, 250]);
-    p.textSize(64);
+    p.textSize(24);
     p.textAlign(p.LEFT, p.TOP);
     p.fill([255, 255, 255]);
+    p.textFont("monospace");
     p.text(String(e), 32, 32);
     p.pop();
     if (!erroredLastFrame) {
@@ -83,10 +84,9 @@ const keydown = (p: p5, state: State) => (e: KeyboardEvent) => {
 };
 
 if (import.meta.hot) {
-  import.meta.hot.accept(() => {
+  import.meta.hot.dispose(() => {
+    audioElement.pause();
     if (registeredCallback)
       window.removeEventListener("keydown", registeredCallback);
-
-    audioElement.pause();
   });
 }

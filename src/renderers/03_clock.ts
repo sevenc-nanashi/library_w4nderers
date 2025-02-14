@@ -1,7 +1,7 @@
 import p5 from "p5";
 import { State } from "../state.ts";
 import { colors, dotUnit } from "../const.ts";
-import { saturate, useGraphicsContext } from "../utils.ts";
+import { saturate, useRendererContext } from "../utils.ts";
 import { DrumDefinition, drumDefinition, mainDrum } from "../drum.ts";
 import { midi } from "../midi.ts";
 import { clip, easeInQuint, easeOutQuint } from "../easing.ts";
@@ -13,6 +13,7 @@ const chordTrack = midi.tracks.find((track) => track.name === "LABS")!;
 const visualizerTimeline = timeline.tracks.find(
   (track) => track.name === "visualizer",
 )!;
+const scaleTimeline = timeline.tracks.find((track) => track.name === "scale")!;
 
 let graphics: p5.Graphics;
 
@@ -43,18 +44,19 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   }
 
   graphics.clear();
-  using _context = useGraphicsContext(graphics);
+  using _context = useRendererContext(graphics);
   graphics.noSmooth();
 
   const size = graphics.height * 0.3;
 
   graphics.translate(graphics.width / 2, graphics.height * 0.4);
+  drawScale(p, state, size);
   drawChord(p, state, size);
   drawClock(p, state, size);
   drawDrum(p, state, size, activateNote);
 
   {
-    using _context = useGraphicsContext(p);
+    using _context = useRendererContext(p);
     p.noSmooth();
     p.image(
       graphics,
@@ -82,20 +84,19 @@ const drawClock = (p: p5, state: State, size: number) => {
     ? colors[colorNote.midi - characterMidi]
     : ([255, 255, 255] as const);
 
-  graphics.noFill();
-  graphics.stroke(
-    ...saturate(
-      primaryColor,
-      colorNote
-        ? easeOutQuint(
-            (state.currentMeasure -
-              midi.header.ticksToMeasures(colorNote.ticks)) *
-              4,
-          ) * 0.5
-        : 0,
-    ),
-    255,
+  const color = saturate(
+    primaryColor,
+    colorNote
+      ? easeOutQuint(
+          (state.currentMeasure -
+            midi.header.ticksToMeasures(colorNote.ticks)) *
+            4,
+        ) * 0.5
+      : 0,
   );
+
+  graphics.noFill();
+  graphics.stroke(...color, 255);
   graphics.strokeWeight(dotUnit * 2);
   graphics.circle(0, 0, size * 2);
 
@@ -147,6 +148,10 @@ const drawClock = (p: p5, state: State, size: number) => {
   ) {
     graphics.line(0, 0, ...getXY(0, size * 0.5));
   }
+
+  graphics.noStroke();
+  graphics.fill(...color, 255);
+  graphics.circle(0, 0, dotUnit * 4);
 };
 
 const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
@@ -195,7 +200,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
               : 0.8) *
             (1 - clip(postAnimation * 4));
           const [x, y] = getXY(midi.header.ticksToMeasures(drum.ticks), size);
-          using _context = useGraphicsContext(graphics);
+          using _context = useRendererContext(graphics);
           graphics.fill(255);
           graphics.stroke(255);
           graphics.strokeWeight(dotUnit);
@@ -209,7 +214,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
               ? 1.5 - easeOutQuint(passedMeasures * 4) / 2
               : 0.9;
           const [x, y] = getXY(midi.header.ticksToMeasures(drum.ticks), size);
-          using _context = useGraphicsContext(graphics);
+          using _context = useRendererContext(graphics);
           graphics.fill(255);
           graphics.strokeWeight(0);
           graphics.erase(255, 0);
@@ -229,7 +234,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
         case "hihat": {
           const factor =
             passedMeasures > 0 ? 1.5 - easeOutQuint(passedMeasures * 4) / 2 : 0;
-          using _context = useGraphicsContext(graphics);
+          using _context = useRendererContext(graphics);
           const [ix, iy] = getXY(
             midi.header.ticksToMeasures(drum.ticks),
             size - dotUnit * 8 * factor,
@@ -247,7 +252,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
         case "openHihat": {
           const factor =
             passedMeasures > 0 ? 1.5 - easeOutQuint(passedMeasures * 4) / 2 : 0;
-          using _context = useGraphicsContext(graphics);
+          using _context = useRendererContext(graphics);
           const distance = (dotUnit * 8 * factor) / Math.sqrt(2);
           const [ix, iy] = getXY(
             midi.header.ticksToMeasures(drum.ticks),
@@ -272,7 +277,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
         case "clap": {
           if (passedMeasures <= 0) break;
           const factor = 1.5 - easeOutQuint(passedMeasures * 4) / 2;
-          using _context = useGraphicsContext(graphics);
+          using _context = useRendererContext(graphics);
           const [x, y] = getXY(
             midi.header.ticksToMeasures(drum.ticks),
             size + dotUnit * 12 * factor,
@@ -291,8 +296,8 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           const factor =
             passedMeasures > 0 ? 1.5 - easeOutQuint(passedMeasures * 4) / 2 : 1;
           const angle = midi.header.ticksToMeasures(drum.ticks);
-          const [x, y] = getXY(angle, size + dotUnit * 0.75);
-          using _context = useGraphicsContext(graphics);
+          const [x, y] = getXY(angle, size + dotUnit * 0.5);
+          using _context = useRendererContext(graphics);
           graphics.fill(255);
           graphics.noStroke();
           graphics.arc(
@@ -310,8 +315,8 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           const factor =
             passedMeasures > 0 ? 1.5 - easeOutQuint(passedMeasures * 4) / 2 : 1;
           const angle = midi.header.ticksToMeasures(drum.ticks);
-          const [x, y] = getXY(angle, size - dotUnit * 0.75);
-          using _context = useGraphicsContext(graphics);
+          const [x, y] = getXY(angle, size - dotUnit * 0.5);
+          using _context = useRendererContext(graphics);
           graphics.fill(255);
           graphics.noStroke();
           graphics.arc(
@@ -325,7 +330,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           break;
         }
         case "dial": {
-          using _context = useGraphicsContext(graphics);
+          using _context = useRendererContext(graphics);
 
           graphics.noFill();
           graphics.stroke(255, 255 * (1 - clip(passedMeasures)));
@@ -354,7 +359,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           break;
         }
         case "star": {
-          using _context = useGraphicsContext(graphics);
+          using _context = useRendererContext(graphics);
           const starSize = size * 2 - dotUnit * 20;
           const divs = 16;
           graphics.strokeWeight(dotUnit * 2);
@@ -383,7 +388,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
         }
         case "cymbal": {
           if (drum.ticks > state.currentTick) break;
-          using _context = useGraphicsContext(graphics);
+          using _context = useRendererContext(graphics);
           graphics.strokeWeight(dotUnit * 2 * (1 - clip(passedMeasures)));
           graphics.noFill();
           graphics.stroke(255, 255 * (1 - clip(passedMeasures * 2)));
@@ -400,7 +405,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
         }
         case "miniCymbal": {
           if (drum.ticks > state.currentTick) break;
-          using _context = useGraphicsContext(graphics);
+          using _context = useRendererContext(graphics);
           graphics.strokeWeight(dotUnit * 2 * (1 - clip(passedMeasures)));
           graphics.noFill();
           graphics.stroke(255, 255 * (1 - clip(passedMeasures * 2)));
@@ -479,6 +484,34 @@ const drawChord = (p: p5, state: State, size: number) => {
         graphics.line(lx, ly, rx, ry);
       }
     }
+  }
+};
+
+const drawScale = (p: p5, state: State, size: number) => {
+  const scaleRadius = size * 0.5;
+  const scaleNotes = scaleTimeline.notes
+    .filter(
+      (note) =>
+        note.ticks <= state.currentTick &&
+        state.currentTick < note.ticks + note.durationTicks,
+    )
+    .toSorted((a, b) => a.midi - b.midi);
+  const pad = 0.005;
+  const shift = (1 / 12) * 0.5 + 0.25;
+  for (const [i, scaleNote] of scaleNotes.entries()) {
+    const degree = (scaleNote.midi % 12) / 12;
+    graphics.stroke(255, i === 0 ? 255 : 160);
+    graphics.strokeWeight(dotUnit * 2);
+    graphics.strokeCap(p.SQUARE);
+    graphics.noFill();
+    graphics.arc(
+      0,
+      0,
+      scaleRadius,
+      scaleRadius,
+      (degree + pad - shift) * Math.PI * 2,
+      (degree + 1 / 12 - pad - shift) * Math.PI * 2,
+    );
   }
 };
 

@@ -1,9 +1,9 @@
 import p5 from "p5";
 import { State } from "../state.ts";
 import { drumVisualizer } from "../components/drumVisualizer.ts";
-import { dotUnit, smallFont } from "../const.ts";
+import { dotUnit, mainFont, smallFont } from "../const.ts";
 import timeline from "../assets/timeline.mid?mid";
-import { useGraphicsContext } from "../utils.ts";
+import { useRendererContext } from "../utils.ts";
 
 const visualizerTimeline = timeline.tracks.find(
   (track) => track.name === "visualizer",
@@ -23,7 +23,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   );
   if (!activateNote) return;
   {
-    using _context = useGraphicsContext(p);
+    using _context = useRendererContext(p);
     p.stroke(255);
     p.strokeWeight(dotUnit);
     p.noFill();
@@ -60,16 +60,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   p.textSize(dotUnit * 6);
   p.fill(255);
   {
-    using _context = useGraphicsContext(p);
-    p.textAlign(p.LEFT, p.TOP);
-    p.text(
-      [`library.w4nderers`].join(" | "),
-      padding + cornerPadding,
-      padding + cornerPadding,
-    );
-  }
-  {
-    using _context = useGraphicsContext(p);
+    using _context = useRendererContext(p);
     p.textAlign(p.LEFT, p.BOTTOM);
     p.text(
       [
@@ -89,7 +80,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
     );
   }
   {
-    using _context = useGraphicsContext(p);
+    using _context = useRendererContext(p);
     p.translate(
       p.width - padding - cornerPadding,
       p.height - padding - cornerPadding,

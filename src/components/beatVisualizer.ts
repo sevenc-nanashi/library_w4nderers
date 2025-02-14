@@ -1,5 +1,5 @@
 import type p5 from "p5";
-import { dotUnit, smallFont } from "../const";
+import { dotUnit, mainFont } from "../const";
 import { midi } from "../midi";
 import type { State } from "../state";
 
@@ -40,7 +40,7 @@ export const beatVisualizer = import.meta.hmrify(
       }
     }
 
-    graphics.textFont(smallFont);
+    graphics.textFont(mainFont);
     graphics.textSize(dotUnit * 6);
     graphics.fill(255);
     graphics.textAlign(graphics.CENTER, graphics.BOTTOM);

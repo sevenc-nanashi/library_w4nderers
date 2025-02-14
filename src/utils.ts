@@ -1,4 +1,4 @@
-export const useGraphicsContext = (p: {
+export const useRendererContext = (p: {
   push: () => void;
   pop: () => void;
 }) => {
@@ -22,3 +22,6 @@ export const saturate = (
     avg + amount * (b - avg),
   ];
 };
+
+export const dim = (rgb: readonly [number, number, number], factor: number) =>
+  rgb.map((v) => v * factor) as [number, number, number];

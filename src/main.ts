@@ -3,9 +3,8 @@ import "./style.css";
 import { draw } from "./draw.ts";
 import { width, height, frameRate } from "./const.ts";
 import { State } from "./state.ts";
-import { attachCapturerUi } from "p5-frame-capturer";
 
-const instance = new p5((p: p5) => {
+new p5((p: p5) => {
   const state = new State(0, false);
   p.setup = async () => {
     p.frameRate(frameRate);
@@ -16,5 +15,3 @@ const instance = new p5((p: p5) => {
     draw(p, state);
   };
 });
-
-attachCapturerUi(instance);
