@@ -29,8 +29,7 @@ const noSegmentMidi = 74;
 
 export const draw = import.meta.hmrify((p: p5, state: State) => {
   if (!graphics) {
-    graphics = p.createGraphics(p.width, p.height);
-    graphics.scale(1 / screenDotUnit);
+    graphics = p.createGraphics(p.width / dotUnit, p.height / dotUnit);
   }
 
   const activateNote = visualizerTimeline.notes.find(
@@ -66,8 +65,8 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
       p.height,
       0,
       0,
-      graphics.width / screenDotUnit,
-      graphics.height / screenDotUnit,
+      graphics.width,
+      graphics.height,
     );
   }
 });
@@ -97,7 +96,7 @@ const drawClock = (p: p5, state: State, size: number) => {
 
   graphics.noFill();
   graphics.stroke(...color, 255);
-  graphics.strokeWeight(dotUnit * 2);
+  graphics.strokeWeight(2);
   graphics.circle(0, 0, size * 2);
 
   graphics.line(
@@ -112,7 +111,7 @@ const drawClock = (p: p5, state: State, size: number) => {
       )
         ? 0
         : state.currentMeasure % 1,
-      size - dotUnit * 4,
+      size - 4,
     ),
   );
 
@@ -151,7 +150,7 @@ const drawClock = (p: p5, state: State, size: number) => {
 
   graphics.noStroke();
   graphics.fill(...color, 255);
-  graphics.circle(0, 0, dotUnit * 4);
+  graphics.circle(0, 0, 4);
 };
 
 const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
@@ -203,8 +202,8 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           using _context = useRendererContext(graphics);
           graphics.fill(255);
           graphics.stroke(255);
-          graphics.strokeWeight(dotUnit);
-          graphics.circle(x, y, dotUnit * 8 * factor);
+          graphics.strokeWeight(1);
+          graphics.circle(x, y, 8 * factor);
           break;
         }
         case "snare": {
@@ -221,14 +220,14 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           graphics.circle(
             x,
             y,
-            dotUnit * 8 * factor * (1 - clip(postAnimation * 4)),
+            8 * factor * (1 - clip(postAnimation * 4)),
           );
 
           graphics.noErase();
           graphics.stroke(255, 255);
           graphics.noFill();
-          graphics.strokeWeight(dotUnit * 1.5 * (1 - clip(postAnimation * 4)));
-          graphics.circle(x, y, dotUnit * 8 * factor);
+          graphics.strokeWeight(1.5 * (1 - clip(postAnimation * 4)));
+          graphics.circle(x, y, 8 * factor);
           break;
         }
         case "hihat": {
@@ -237,15 +236,15 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           using _context = useRendererContext(graphics);
           const [ix, iy] = getXY(
             midi.header.ticksToMeasures(drum.ticks),
-            size - dotUnit * 8 * factor,
+            size - 8 * factor,
           );
           const [ox, oy] = getXY(
             midi.header.ticksToMeasures(drum.ticks),
-            size + dotUnit * 8 * factor,
+            size + 8 * factor,
           );
           graphics.noFill();
           graphics.stroke(255, 255 * (1 - clip(postAnimation * 4)));
-          graphics.strokeWeight(dotUnit);
+          graphics.strokeWeight(1);
           graphics.line(ix, iy, ox, oy);
           break;
         }
@@ -253,7 +252,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           const factor =
             passedMeasures > 0 ? 1.5 - easeOutQuint(passedMeasures * 4) / 2 : 0;
           using _context = useRendererContext(graphics);
-          const distance = (dotUnit * 8 * factor) / Math.sqrt(2);
+          const distance = (8 * factor) / Math.sqrt(2);
           const [ix, iy] = getXY(
             midi.header.ticksToMeasures(drum.ticks),
             size - distance,
@@ -268,7 +267,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           );
           graphics.noFill();
           graphics.stroke(255, 255 * (1 - clip(postAnimation * 4)));
-          graphics.strokeWeight(dotUnit);
+          graphics.strokeWeight(1);
           graphics.line(ix + sx, iy + sy, ox - sx, oy - sy);
           graphics.line(ix - sx, iy - sy, ox + sx, oy + sy);
 
@@ -280,14 +279,14 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           using _context = useRendererContext(graphics);
           const [x, y] = getXY(
             midi.header.ticksToMeasures(drum.ticks),
-            size + dotUnit * 12 * factor,
+            size + 12 * factor,
           );
           graphics.fill(255);
           graphics.noStroke();
           graphics.circle(
             x,
             y,
-            dotUnit * 4 * (1 - easeOutQuint(postAnimation * 2)),
+            4 * (1 - easeOutQuint(postAnimation * 2)),
           );
           break;
         }
@@ -296,15 +295,15 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           const factor =
             passedMeasures > 0 ? 1.5 - easeOutQuint(passedMeasures * 4) / 2 : 1;
           const angle = midi.header.ticksToMeasures(drum.ticks);
-          const [x, y] = getXY(angle, size + dotUnit * 0.5);
+          const [x, y] = getXY(angle, size + 0.5);
           using _context = useRendererContext(graphics);
           graphics.fill(255);
           graphics.noStroke();
           graphics.arc(
             x,
             y,
-            dotUnit * 4 * factor,
-            dotUnit * 4 * factor,
+            4 * factor,
+            4 * factor,
             (angle + 0.45) * Math.PI * 2,
             (angle + 1.05) * Math.PI * 2,
           );
@@ -315,15 +314,15 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           const factor =
             passedMeasures > 0 ? 1.5 - easeOutQuint(passedMeasures * 4) / 2 : 1;
           const angle = midi.header.ticksToMeasures(drum.ticks);
-          const [x, y] = getXY(angle, size - dotUnit * 0.5);
+          const [x, y] = getXY(angle, size - 0.5);
           using _context = useRendererContext(graphics);
           graphics.fill(255);
           graphics.noStroke();
           graphics.arc(
             x,
             y,
-            dotUnit * 4 * factor,
-            dotUnit * 4 * factor,
+            4 * factor,
+            4 * factor,
             (angle - 0.05) * Math.PI * 2,
             (angle + 0.55) * Math.PI * 2,
           );
@@ -334,18 +333,18 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
 
           graphics.noFill();
           graphics.stroke(255, 255 * (1 - clip(passedMeasures)));
-          graphics.strokeWeight(dotUnit * 2);
+          graphics.strokeWeight(2);
           for (const [i, o] of [
             [-16, -12],
             [12, 16],
           ]) {
             const [ix, iy] = getXY(
               midi.header.ticksToMeasures(drum.ticks),
-              size + dotUnit * i,
+              size + i,
             );
             const [ox, oy] = getXY(
               midi.header.ticksToMeasures(drum.ticks),
-              size + dotUnit * o,
+              size + o,
             );
             graphics.line(ix, iy, ox, oy);
           }
@@ -353,16 +352,16 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           graphics.circle(
             x,
             y,
-            p.lerp(dotUnit * 16, dotUnit * 20, easeOutQuint(passedMeasures)),
+            p.lerp(16, 20, easeOutQuint(passedMeasures)),
           );
 
           break;
         }
         case "star": {
           using _context = useRendererContext(graphics);
-          const starSize = size * 2 - dotUnit * 20;
+          const starSize = size * 2 - 20;
           const divs = 16;
-          graphics.strokeWeight(dotUnit * 2);
+          graphics.strokeWeight(2);
           graphics.noFill();
           const shift = Math.floor(passedMeasures * 64) / 2;
           graphics.stroke(255, 255 * (1 - easeInQuint(passedMeasures / 2)));
@@ -382,14 +381,14 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           graphics.circle(
             x,
             y,
-            p.lerp(dotUnit * 12, dotUnit * 20, easeOutQuint(passedMeasures)),
+            p.lerp(12, 20, easeOutQuint(passedMeasures)),
           );
           break;
         }
         case "cymbal": {
           if (drum.ticks > state.currentTick) break;
           using _context = useRendererContext(graphics);
-          graphics.strokeWeight(dotUnit * 2 * (1 - clip(passedMeasures)));
+          graphics.strokeWeight(2 * (1 - clip(passedMeasures)));
           graphics.noFill();
           graphics.stroke(255, 255 * (1 - clip(passedMeasures * 2)));
           graphics.circle(
@@ -397,7 +396,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
             0,
             p.lerp(
               size * 2,
-              size * 2 + dotUnit * 32,
+              size * 2 + 32,
               easeOutQuint(passedMeasures),
             ),
           );
@@ -406,7 +405,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
         case "miniCymbal": {
           if (drum.ticks > state.currentTick) break;
           using _context = useRendererContext(graphics);
-          graphics.strokeWeight(dotUnit * 2 * (1 - clip(passedMeasures)));
+          graphics.strokeWeight(2 * (1 - clip(passedMeasures)));
           graphics.noFill();
           graphics.stroke(255, 255 * (1 - clip(passedMeasures * 2)));
           graphics.circle(
@@ -414,7 +413,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
             0,
             p.lerp(
               size * 2,
-              size * 2 - dotUnit * 32,
+              size * 2 - 32,
               easeOutQuint(passedMeasures),
             ),
           );
@@ -480,7 +479,7 @@ const drawChord = (p: p5, state: State, size: number) => {
         const [rx, ry] = getXY(rDegree, size * scale);
         const isMainLine = r - l === 1;
         graphics.stroke(255, (isMainLine ? 255 : 160) * scale);
-        graphics.strokeWeight(isMainLine ? dotUnit * 1.5 : dotUnit * 0.75);
+        graphics.strokeWeight(isMainLine ? 1.5 : 0.75);
         graphics.line(lx, ly, rx, ry);
       }
     }
@@ -501,7 +500,7 @@ const drawScale = (p: p5, state: State, size: number) => {
   for (const [i, scaleNote] of scaleNotes.entries()) {
     const degree = (scaleNote.midi % 12) / 12;
     graphics.stroke(255, i === 0 ? 255 : 160);
-    graphics.strokeWeight(dotUnit * 2);
+    graphics.strokeWeight(2);
     graphics.strokeCap(p.SQUARE);
     graphics.noFill();
     graphics.arc(

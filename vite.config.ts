@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import yaml from "@rollup/plugin-yaml";
 import hmrify from "vite-plugin-hmrify";
 import arraybuffer from "vite-plugin-arraybuffer";
+import wasm from "vite-plugin-wasm";
 
 export default defineConfig({
   server: {
@@ -10,7 +11,7 @@ export default defineConfig({
   },
   plugins: [
     yaml(),
-    // @ts-expect-error
+    wasm(),
     hmrify(),
     arraybuffer(),
     {

@@ -6,12 +6,17 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc && vite build",
-		"preview": "vite preview"
+		"preview": "vite preview",
+		"scripts:atlas": "node --experimental-strip-types scripts/atlas.ts"
 	},
 	"devDependencies": {
+		"@napi-rs/canvas": "^0.1.67",
 		"@rollup/plugin-yaml": "^4.1.2",
+		"@types/js-yaml": "^4.0.9",
 		"@types/node": "^22.13.1",
 		"@types/p5": "^1.7.6",
+		"js-yaml": "^4.1.0",
+		"sharp": "^0.33.5",
 		"typescript": "^5.7.3",
 		"vite": "^6.0.11",
 		"vite-plugin-arraybuffer": "^0.0.8",
@@ -22,6 +27,13 @@
 		"@tonejs/midi": "^2.0.28",
 		"midi-file": "^1.2.4",
 		"p5": "1.11.3",
-		"p5-frame-capturer": "^0.2.0"
+		"p5-frame-capturer": "^0.2.0",
+		"pixelsort": "link:pixelsort/pkg",
+		"vite-plugin-wasm": "^3.4.1"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"sharp"
+		]
 	}
 }

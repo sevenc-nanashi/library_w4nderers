@@ -12,13 +12,15 @@ const audioElement = new Audio(audio);
 audioElement.autoplay = false;
 audioElement.volume = 0.5;
 
+let disposed = false;
+
 let registeredCallback: ((e: KeyboardEvent) => void) | null = null;
 let erroredLastFrame = false;
 export const draw = import.meta.hmrify((p: p5, state: State) => {
   if (!audioElement.paused && !state.playing) {
     audioElement.pause();
   }
-  if (audioElement.paused && state.playing && !capturerState.isCapturing) {
+  if (audioElement.paused && state.playing && !capturerState.isCapturing && !disposed) {
     audioElement.play();
     audioElement.currentTime = state.currentFrame / frameRate;
   }
@@ -86,6 +88,7 @@ const keydown = (p: p5, state: State) => (e: KeyboardEvent) => {
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     audioElement.pause();
+    disposed = true;
     if (registeredCallback)
       window.removeEventListener("keydown", registeredCallback);
   });
