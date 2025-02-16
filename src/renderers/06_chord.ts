@@ -4,6 +4,7 @@ import { dotUnit, height } from "../const";
 import { easeOutQuint } from "../easing";
 import timelineMid from "../assets/timeline.mid?mid";
 import type { State } from "../state";
+import { useRendererContext } from "../utils";
 
 const baseMid = 60;
 
@@ -19,7 +20,7 @@ const destWidth = 682;
 const partWidth = 236;
 const leftPadding = 86;
 const imageLeftPadding = 44;
-const imageTopPadding = 110;
+const imageTopPadding = 80;
 const imagePartWidth = 124;
 const rowHeight = 160;
 const lineHeight = 80;
@@ -34,6 +35,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
     preload(p);
     return;
   }
+  using _context = useRendererContext(p);
   const activeChord = chordTrack.notes.findLast(
     (note) =>
       state.currentTick >= note.ticks &&
@@ -84,9 +86,15 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   p.line(x, lineY, x, lineY + lineHeight);
   const rate = chordImage.width / destWidth;
 
-  const isContinued = chordTrack.notes.some(
-    (note) => note.ticks + note.durationTicks === activeChord.ticks,
-  );
+  const isContinued =
+    chordTrack.notes.some(
+      (note) => note.ticks + note.durationTicks === activeChord.ticks,
+    ) &&
+    !chordTrack.notes.some(
+      (note) =>
+        note.ticks + note.durationTicks === activeChord.ticks &&
+        note.midi === baseMid - 1,
+    );
   let animationProgress = 1;
   if (!isContinued) {
     animationProgress = p.map(
@@ -100,6 +108,8 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   }
 
   p.tint(255, 255 * easeOutQuint(animationProgress));
+  p.drawingContext.shadowColor = "#8888";
+  p.drawingContext.shadowBlur = dotUnit;
   if (isHalf) {
     p.image(
       chordImage,
