@@ -26,8 +26,8 @@ for (const [path, lab] of Object.entries(rawLabs)) {
       continue;
     }
     characterLabs[character as keyof typeof characterLabs].push({
-      start: Number.parseInt(start) / 10e7,
-      end: Number.parseInt(end) / 10e7,
+      start: Number.parseInt(start) / 10e6,
+      end: Number.parseInt(end) / 10e6,
       phoneme,
     });
   }

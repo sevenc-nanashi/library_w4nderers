@@ -15,3 +15,7 @@ export const easeOutInQuint = (t: number) => {
 export const clip = (t: number) => {
   return Math.max(0, Math.min(1, t));
 };
+
+export const unlerp = (a: number, b: number, x: number) => {
+  return (x - a) / (b - a);
+};

@@ -9,6 +9,7 @@ import mult from "../shaders/mult.frag?raw";
 import mainImageUrl from "../assets/illusts/main.png?url";
 import { atlasMap } from "../atlas";
 import { characterLabs } from "../lab";
+import { easeOutQuint, unlerp } from "../easing";
 
 const bridgeTrack = timelineMid.tracks.find(
   (track) => track.name === "bridge",
@@ -20,21 +21,15 @@ let bufferGraphics: p5.Graphics;
 let shader: p5.Shader;
 let mainImage: p5.Image;
 
-const bridgeNote = 48;
+const bridgeSpawnMidi = 48;
+const bridgePersistMidi = 49;
+const shadowSpawnMidi = 50;
+const shadowPersistMidi = 51;
 
 const reiBaseNote = 60;
 const tycBaseNote = 72;
 
 export const draw = import.meta.hmrify((p: p5, state: State) => {
-  const bridgeNoteEvent = bridgeTrack.notes.find(
-    (note) =>
-      note.midi === bridgeNote &&
-      note.ticks <= state.currentTick &&
-      state.currentTick < note.ticks + note.durationTicks,
-  );
-  if (!bridgeNoteEvent) {
-    return;
-  }
   if (!shadowGraphics) {
     mainImage = p.loadImage(mainImageUrl);
     shadowGraphics = p.createGraphics(p.width / dotUnit, p.height / dotUnit);
@@ -56,41 +51,107 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   shadowGraphics.noSmooth();
   mainGraphics.noSmooth();
 
-  const bridgeAtlas = atlasMap["bridge"];
-  const shadowAtlas = atlasMap["bridge_shadow"];
-  const bridgeHeight = bridgeAtlas.height - 20;
-  mainGraphics.image(
-    mainImage,
-    0,
-    mainGraphics.height - bridgeHeight,
-    bridgeAtlas.width,
-    bridgeAtlas.height,
-    ...bridgeAtlas.start,
-    bridgeAtlas.width,
-    bridgeAtlas.height,
+  let shadowScale = 0;
+  const shadowSpawnNote = bridgeTrack.notes.find(
+    (note) =>
+      note.midi === shadowSpawnMidi &&
+      note.ticks <= state.currentTick &&
+      state.currentTick < note.ticks + note.durationTicks,
   );
-  shadowGraphics.image(
-    mainImage,
-    0,
-    shadowGraphics.height -
-      bridgeHeight +
-      (bridgeAtlas.yellowPixels[0][1] - bridgeAtlas.start[1]),
-    shadowAtlas.width,
-    shadowAtlas.height,
-    ...shadowAtlas.start,
-    shadowAtlas.width,
-    shadowAtlas.height,
+  if (shadowSpawnNote) {
+    shadowScale = easeOutQuint(
+      unlerp(
+        shadowSpawnNote.ticks,
+        shadowSpawnNote.ticks + shadowSpawnNote.durationTicks,
+        state.currentTick,
+      ),
+    );
+  }
+  const shadowPersistNote = bridgeTrack.notes.find(
+    (note) =>
+      note.midi === shadowPersistMidi &&
+      note.ticks <= state.currentTick &&
+      state.currentTick < note.ticks + note.durationTicks,
   );
+  if (shadowPersistNote) {
+    shadowScale = 1;
+  }
+
+  let bridgeAlpha = 0;
+  const bridgeSpawnNote = bridgeTrack.notes.find(
+    (note) =>
+      note.midi === bridgeSpawnMidi &&
+      note.ticks <= state.currentTick &&
+      state.currentTick < note.ticks + note.durationTicks,
+  );
+  if (bridgeSpawnNote) {
+    bridgeAlpha = easeOutQuint(
+      unlerp(
+        bridgeSpawnNote.ticks,
+        bridgeSpawnNote.ticks + bridgeSpawnNote.durationTicks,
+        state.currentTick,
+      ),
+    );
+  }
+  const bridgePersistNote = bridgeTrack.notes.find(
+    (note) =>
+      note.midi === bridgePersistMidi &&
+      note.ticks <= state.currentTick &&
+      state.currentTick < note.ticks + note.durationTicks,
+  );
+  if (bridgePersistNote) {
+    bridgeAlpha = 1;
+  }
+
+  if (bridgeAlpha > 0) {
+    using _context = useRendererContext(mainGraphics);
+    mainGraphics.tint(255, bridgeAlpha * 255);
+    mainGraphics.translate(0, 4 * (1 - bridgeAlpha));
+    const bridgeAtlas = atlasMap["bridge"];
+    const shadowAtlas = atlasMap["bridge_shadow"];
+    const bridgeHeight = bridgeAtlas.height - 10;
+    mainGraphics.image(
+      mainImage,
+      0,
+      mainGraphics.height - bridgeHeight,
+      bridgeAtlas.width,
+      bridgeAtlas.height,
+      ...bridgeAtlas.start,
+      bridgeAtlas.width,
+      bridgeAtlas.height,
+    );
+    if (shadowScale > 0) {
+      using _context = useRendererContext(shadowGraphics);
+      shadowGraphics.translate(
+        0,
+        shadowGraphics.height -
+          bridgeHeight +
+          (bridgeAtlas.yellowPixels[0][1] - bridgeAtlas.start[1]),
+      );
+      shadowGraphics.scale(1, shadowScale);
+      shadowGraphics.image(
+        mainImage,
+        0,
+        0,
+        shadowAtlas.width,
+        shadowAtlas.height,
+        ...shadowAtlas.start,
+        shadowAtlas.width,
+        shadowAtlas.height,
+      );
+    }
+  }
 
   const characterX = 100;
+  const characterMinusY = 20;
   {
     using _context = useRendererContext(shadowGraphics);
 
     shadowGraphics.translate(
       shadowGraphics.width / 2 - characterX,
-      shadowGraphics.height - 20,
+      shadowGraphics.height - characterMinusY,
     );
-    shadowGraphics.scale(1, -1);
+    shadowGraphics.scale(1, -shadowScale);
     drawCharacter(p, shadowGraphics, state, "rei", reiBaseNote);
   }
   {
@@ -98,9 +159,9 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
 
     shadowGraphics.translate(
       shadowGraphics.width / 2 + characterX,
-      shadowGraphics.height - 20,
+      shadowGraphics.height - characterMinusY,
     );
-    shadowGraphics.scale(1, -1);
+    shadowGraphics.scale(1, -shadowScale);
     drawCharacter(p, shadowGraphics, state, "tyc", tycBaseNote);
   }
 
@@ -117,12 +178,12 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   p.scale(dotUnit);
   {
     using _context = useRendererContext(p);
-    p.translate(-characterX, -20);
+    p.translate(-characterX, -characterMinusY);
     drawCharacter(p, p, state, "rei", reiBaseNote);
   }
   {
     using _context = useRendererContext(p);
-    p.translate(characterX, -20);
+    p.translate(characterX, -characterMinusY);
     drawCharacter(p, p, state, "tyc", tycBaseNote);
   }
 });
@@ -162,7 +223,12 @@ const drawCharacter = (
     eyePixel[0] - atlas.start[0],
     eyePixel[1] - atlas.start[1],
   ];
-  const mouthAtlas = atlasMap[`${name}_mouth_n`];
+  const currentMouth = characterLabs[name].find(
+    (lab) => lab.start <= state.currentTime && state.currentTime < lab.end,
+  );
+  const mouthAtlas =
+    atlasMap[`${name}_mouth_${currentMouth?.phoneme}`] ||
+    atlasMap[`${name}_mouth_n`];
   const mouthPixel = atlas.yellowPixels[1];
   const mouthPixelDiff = [
     mouthPixel[0] - atlas.start[0],

@@ -1,7 +1,7 @@
 import p5 from "p5";
 import { State } from "../state.ts";
 import { colors, dotUnit } from "../const.ts";
-import { saturate, useRendererContext } from "../utils.ts";
+import { dim, saturate, useRendererContext } from "../utils.ts";
 import { DrumDefinition, drumDefinition, mainDrum } from "../drum.ts";
 import { midi } from "../midi.ts";
 import { clip, easeInQuint, easeOutQuint } from "../easing.ts";
@@ -46,12 +46,26 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   using _context = useRendererContext(graphics);
   graphics.noSmooth();
 
+  const colorNote = characterTimeline.notes.find(
+    (timelineNote) =>
+      timelineNote.ticks <= state.currentTick &&
+      state.currentTick < timelineNote.ticks + timelineNote.durationTicks &&
+      timelineNote.midi >= characterMidi &&
+      timelineNote.midi < characterMidi + colors.length,
+  );
+  const primaryColor: readonly [number, number, number] = colorNote
+    ? colors[colorNote.midi - characterMidi]
+    : ([255, 255, 255] as const);
+  graphics.drawingContext.shadowBlur = 4;
+  const dimmed = dim(primaryColor, 0.5);
+  graphics.drawingContext.shadowColor = `rgba(${dimmed[0]}, ${dimmed[1]}, ${dimmed[2]}, 64)`;
+
   const size = graphics.height * 0.3;
 
   graphics.translate(graphics.width / 2, graphics.height * 0.4);
   drawScale(p, state, size);
   drawChord(p, state, size);
-  drawClock(p, state, size);
+  drawClock(p, state, size, primaryColor, colorNote);
   drawDrum(p, state, size, activateNote);
 
   {
@@ -71,18 +85,13 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   }
 });
 
-const drawClock = (p: p5, state: State, size: number) => {
-  const colorNote = characterTimeline.notes.find(
-    (timelineNote) =>
-      timelineNote.ticks <= state.currentTick &&
-      state.currentTick < timelineNote.ticks + timelineNote.durationTicks &&
-      timelineNote.midi >= characterMidi &&
-      timelineNote.midi < characterMidi + colors.length,
-  );
-  const primaryColor: readonly [number, number, number] = colorNote
-    ? colors[colorNote.midi - characterMidi]
-    : ([255, 255, 255] as const);
-
+const drawClock = (
+  p: p5,
+  state: State,
+  size: number,
+  primaryColor: readonly [number, number, number],
+  colorNote: Note | undefined,
+) => {
   const color = saturate(
     primaryColor,
     colorNote
@@ -167,7 +176,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
     const midiToName = Object.fromEntries(
       Object.entries(definition).map(([k, v]) => [v, k]),
     );
-    const order = ["lowTom", "highTom", "kick", "snare", "hihat", "clap"];
+    const order = ["lowTom", "highTom", "snare", "hihat", "kick", "clap", "miniCymbal", "cymbal", "dial", "star"];
     for (const drum of drumsInCurrentMeasure.toSorted(
       (a, b) =>
         order.indexOf(midiToName[a.midi]) - order.indexOf(midiToName[b.midi]),
@@ -201,8 +210,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           const [x, y] = getXY(midi.header.ticksToMeasures(drum.ticks), size);
           using _context = useRendererContext(graphics);
           graphics.fill(255);
-          graphics.stroke(255);
-          graphics.strokeWeight(1);
+          graphics.noStroke();
           graphics.circle(x, y, 8 * factor);
           break;
         }
@@ -217,11 +225,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           graphics.fill(255);
           graphics.strokeWeight(0);
           graphics.erase(255, 0);
-          graphics.circle(
-            x,
-            y,
-            8 * factor * (1 - clip(postAnimation * 4)),
-          );
+          graphics.circle(x, y, 8 * factor * (1 - clip(postAnimation * 4)));
 
           graphics.noErase();
           graphics.stroke(255, 255);
@@ -283,11 +287,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           );
           graphics.fill(255);
           graphics.noStroke();
-          graphics.circle(
-            x,
-            y,
-            4 * (1 - easeOutQuint(postAnimation * 2)),
-          );
+          graphics.circle(x, y, 4 * (1 - easeOutQuint(postAnimation * 2)));
           break;
         }
         case "highTom": {
@@ -349,11 +349,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
             graphics.line(ix, iy, ox, oy);
           }
           const [x, y] = getXY(midi.header.ticksToMeasures(drum.ticks), size);
-          graphics.circle(
-            x,
-            y,
-            p.lerp(16, 20, easeOutQuint(passedMeasures)),
-          );
+          graphics.circle(x, y, p.lerp(16, 20, easeOutQuint(passedMeasures)));
 
           break;
         }
@@ -361,6 +357,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           using _context = useRendererContext(graphics);
           const starSize = size * 2 - 20;
           const divs = 16;
+          graphics.drawingContext.shadowColor = "transparent";
           graphics.strokeWeight(2);
           graphics.noFill();
           const shift = Math.floor(passedMeasures * 64) / 2;
@@ -378,44 +375,34 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           }
           graphics.stroke(255, 255 * (1 - clip(passedMeasures)));
           const [x, y] = getXY(midi.header.ticksToMeasures(drum.ticks), size);
-          graphics.circle(
-            x,
-            y,
-            p.lerp(12, 20, easeOutQuint(passedMeasures)),
-          );
+          graphics.circle(x, y, p.lerp(12, 20, easeOutQuint(passedMeasures)));
           break;
         }
         case "cymbal": {
           if (drum.ticks > state.currentTick) break;
           using _context = useRendererContext(graphics);
+          graphics.drawingContext.shadowColor = "transparent";
           graphics.strokeWeight(2 * (1 - clip(passedMeasures)));
           graphics.noFill();
           graphics.stroke(255, 255 * (1 - clip(passedMeasures * 2)));
           graphics.circle(
             0,
             0,
-            p.lerp(
-              size * 2,
-              size * 2 + 32,
-              easeOutQuint(passedMeasures),
-            ),
+            p.lerp(size * 2, size * 2 + 32, easeOutQuint(passedMeasures)),
           );
           break;
         }
         case "miniCymbal": {
           if (drum.ticks > state.currentTick) break;
           using _context = useRendererContext(graphics);
+          graphics.drawingContext.shadowColor = "transparent";
           graphics.strokeWeight(2 * (1 - clip(passedMeasures)));
           graphics.noFill();
           graphics.stroke(255, 255 * (1 - clip(passedMeasures * 2)));
           graphics.circle(
             0,
             0,
-            p.lerp(
-              size * 2,
-              size * 2 - 32,
-              easeOutQuint(passedMeasures),
-            ),
+            p.lerp(size * 2, size * 2 - 32, easeOutQuint(passedMeasures)),
           );
         }
       }
@@ -478,6 +465,11 @@ const drawChord = (p: p5, state: State, size: number) => {
         const [lx, ly] = getXY(lDegree, size * scale);
         const [rx, ry] = getXY(rDegree, size * scale);
         const isMainLine = r - l === 1;
+        using _context = useRendererContext(graphics);
+        if (!isMainLine) {
+          graphics.drawingContext.shadowColor = "transparent";
+        }
+
         graphics.stroke(255, (isMainLine ? 255 : 160) * scale);
         graphics.strokeWeight(isMainLine ? 1.5 : 0.75);
         graphics.line(lx, ly, rx, ry);
