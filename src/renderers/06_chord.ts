@@ -39,7 +39,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   const activeChord = chordTrack.notes.findLast(
     (note) =>
       state.currentTick >= note.ticks &&
-      state.currentTick < note.ticks + note.durationTicks
+      state.currentTick < note.ticks + note.durationTicks,
   );
   if (!activeChord) return;
 
@@ -118,30 +118,17 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   p.drawingContext.shadowColor = "#8888";
   p.drawingContext.shadowBlur = dotUnit;
   if (isHalf) {
-    p.image(
-      chordImage,
-      p.width / 2 -
-        partWidth / 2 -
-        animationWidth * (1 - easeOutQuint(animationProgress)),
-      p.height - padding - rowHeight / rate + imageTopPadding + dotUnit * 2,
-      partWidth,
-      rowHeight / rate,
-      imageLeftPadding,
-      rowHeight * index + imageTopPadding,
-      imagePartWidth,
-      rowHeight,
-    );
-  } else {
-    p.image(
-      chordImage,
-      baseX - animationWidth * (1 - easeOutQuint(animationProgress)),
-      p.height - padding - rowHeight / rate + imageTopPadding + dotUnit * 2,
-      destWidth,
-      rowHeight / rate,
-      0,
-      rowHeight * index + imageTopPadding,
-      chordImage.width,
-      rowHeight,
-    );
+    p.translate((leftPadding + destWidth - partWidth * 2) / 2, 0);
   }
+  p.image(
+    chordImage,
+    baseX - animationWidth * (1 - easeOutQuint(animationProgress)),
+    p.height - padding - rowHeight / rate + imageTopPadding + dotUnit * 2,
+    destWidth,
+    rowHeight / rate,
+    0,
+    rowHeight * index + imageTopPadding,
+    chordImage.width,
+    rowHeight,
+  );
 });

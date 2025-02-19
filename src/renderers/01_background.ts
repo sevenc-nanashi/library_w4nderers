@@ -151,6 +151,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
     ? Math.min(1, (currentTick - alphaNote.ticks) / alphaNote.durationTicks)
     : 1;
   p.tint(255, 255 * easeOutQuint(alphaProgress));
+  p.noSmooth();
   p.image(mainGraphics, 0, 0, p.width, p.height);
 });
 

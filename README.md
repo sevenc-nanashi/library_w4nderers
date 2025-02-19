@@ -1,12 +1,7 @@
-# my_p5_template
+# library->w4nderers
 
-てんぷれ
-
-## 配布
-
-Releasesを参照してください。\
-<https://github.com/sevenc-nanashi/melodic_circle/releases/latest>
+ニコニコ：(TODO)
 
 ## ライセンス
 
-MIT LicenseまたはCC-BY 4.0のデュアルライセンスです。
+[./LICENSE.md](./LICENSE.md)を参照してください。
