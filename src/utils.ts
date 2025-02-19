@@ -25,3 +25,11 @@ export const saturate = (
 
 export const dim = (rgb: readonly [number, number, number], factor: number) =>
   rgb.map((v) => v * factor) as [number, number, number];
+
+export const toRgb = (
+  rgb: readonly [number, number, number],
+  alpha?: number,
+) =>
+  alpha === undefined
+    ? `rgb(${rgb.join(", ")})`
+    : `rgba(${rgb.join(", ")}, ${alpha})`;

@@ -25,6 +25,8 @@ const bridgeSpawnMidi = 48;
 const bridgePersistMidi = 49;
 const shadowSpawnMidi = 50;
 const shadowPersistMidi = 51;
+const roadSpawnMidi = 52;
+const roadPersistMidi = 53;
 
 const reiBaseNote = 60;
 const tycBaseNote = 72;
@@ -77,32 +79,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
     shadowScale = 1;
   }
 
-  let bridgeAlpha = 0;
-  const bridgeSpawnNote = bridgeTrack.notes.find(
-    (note) =>
-      note.midi === bridgeSpawnMidi &&
-      note.ticks <= state.currentTick &&
-      state.currentTick < note.ticks + note.durationTicks,
-  );
-  if (bridgeSpawnNote) {
-    bridgeAlpha = easeOutQuint(
-      unlerp(
-        bridgeSpawnNote.ticks,
-        bridgeSpawnNote.ticks + bridgeSpawnNote.durationTicks,
-        state.currentTick,
-      ),
-    );
-  }
-  const bridgePersistNote = bridgeTrack.notes.find(
-    (note) =>
-      note.midi === bridgePersistMidi &&
-      note.ticks <= state.currentTick &&
-      state.currentTick < note.ticks + note.durationTicks,
-  );
-  if (bridgePersistNote) {
-    bridgeAlpha = 1;
-  }
-
+  const bridgeAlpha = getAlpha(state, bridgeSpawnMidi, bridgePersistMidi);
   if (bridgeAlpha > 0) {
     using _context = useRendererContext(mainGraphics);
     mainGraphics.tint(255, bridgeAlpha * 255);
@@ -140,6 +117,25 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
         shadowAtlas.height,
       );
     }
+  }
+
+  const roadAlpha = getAlpha(state, roadSpawnMidi, roadPersistMidi);
+  if (roadAlpha > 0) {
+    using _context = useRendererContext(mainGraphics);
+    mainGraphics.tint(255, roadAlpha * 255);
+    mainGraphics.translate(0, 4 * (1 - roadAlpha));
+    const roadAtlas = atlasMap["road"];
+    const roadHeight = roadAtlas.height;
+    mainGraphics.image(
+      mainImage,
+      0,
+      mainGraphics.height - roadHeight,
+      roadAtlas.width,
+      roadAtlas.height,
+      ...roadAtlas.start,
+      roadAtlas.width,
+      roadAtlas.height,
+    );
   }
 
   const characterX = 100;
@@ -198,7 +194,7 @@ const drawCharacter = (
   const note = bridgeTrack.notes.find(
     (note) =>
       note.midi >= baseMidi &&
-      note.midi < baseMidi + 2 &&
+      note.midi < baseMidi + 4 &&
       note.ticks <= state.currentTick &&
       state.currentTick < note.ticks + note.durationTicks,
   );
@@ -276,6 +272,35 @@ const drawCharacter = (
     mouthAtlas.width,
     mouthAtlas.height,
   );
+};
+
+const getAlpha = (state: State, spawnMidi: number, persistMidi: number) => {
+  let alpha = 0;
+  const spawnNote = bridgeTrack.notes.find(
+    (note) =>
+      note.midi === spawnMidi &&
+      note.ticks <= state.currentTick &&
+      state.currentTick < note.ticks + note.durationTicks,
+  );
+  if (spawnNote) {
+    alpha = easeOutQuint(
+      unlerp(
+        spawnNote.ticks,
+        spawnNote.ticks + spawnNote.durationTicks,
+        state.currentTick,
+      ),
+    );
+  }
+  const persistNote = bridgeTrack.notes.find(
+    (note) =>
+      note.midi === persistMidi &&
+      note.ticks <= state.currentTick &&
+      state.currentTick < note.ticks + note.durationTicks,
+  );
+  if (persistNote) {
+    alpha = 1;
+  }
+  return alpha;
 };
 
 if (import.meta.hot) {

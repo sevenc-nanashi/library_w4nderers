@@ -33,7 +33,7 @@ let pixelizeShader: p5.Shader;
 let cpuGraphics: p5.Graphics;
 let mainGraphics: p5.Graphics;
 
-const wave = dotUnit;
+const wave = 1;
 const minusScale = 1 / 4;
 
 export const preload = import.meta.hmrify((p: p5) => {

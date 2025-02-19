@@ -22,6 +22,9 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
       note.midi === activateMidi,
   );
   if (!activateNote) return;
+  using _context = useRendererContext(p);
+  p.drawingContext.shadowColor = "#8888";
+  p.drawingContext.shadowBlur = dotUnit;
   {
     using _context = useRendererContext(p);
     p.stroke(255);
@@ -85,6 +88,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
       p.width - padding - cornerPadding,
       p.height - padding - cornerPadding,
     );
+    p.drawingContext.shadowColor = "transparent";
     drumVisualizer(p, state, activateNote);
   }
 });

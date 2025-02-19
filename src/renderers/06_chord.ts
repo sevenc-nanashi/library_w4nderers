@@ -6,7 +6,7 @@ import timelineMid from "../assets/timeline.mid?mid";
 import type { State } from "../state";
 import { useRendererContext } from "../utils";
 
-const baseMid = 60;
+const baseMidi = 60;
 
 const chordTrack = timelineMid.tracks.find((track) => track.name === "chord")!;
 
@@ -43,7 +43,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   );
   if (!activeChord) return;
 
-  const index = activeChord.midi - baseMid;
+  const index = activeChord.midi - baseMidi;
   if (index === -1) return;
 
   const currentTick = state.currentTick;
@@ -93,7 +93,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
     !chordTrack.notes.some(
       (note) =>
         note.ticks + note.durationTicks === activeChord.ticks &&
-        note.midi === baseMid - 1,
+        note.midi === baseMidi - 1,
     );
   let animationProgress = 1;
   if (!isContinued) {

@@ -176,7 +176,18 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
     const midiToName = Object.fromEntries(
       Object.entries(definition).map(([k, v]) => [v, k]),
     );
-    const order = ["lowTom", "highTom", "snare", "hihat", "kick", "clap", "miniCymbal", "cymbal", "dial", "star"];
+    const order = [
+      "lowTom",
+      "highTom",
+      "snare",
+      "hihat",
+      "kick",
+      "clap",
+      "miniCymbal",
+      "cymbal",
+      "dial",
+      "star",
+    ];
     for (const drum of drumsInCurrentMeasure.toSorted(
       (a, b) =>
         order.indexOf(midiToName[a.midi]) - order.indexOf(midiToName[b.midi]),
@@ -224,8 +235,8 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           using _context = useRendererContext(graphics);
           graphics.fill(255);
           graphics.strokeWeight(0);
-          graphics.erase(255, 0);
-          graphics.circle(x, y, 8 * factor * (1 - clip(postAnimation * 4)));
+          graphics.erase(255 * (1 - clip(postAnimation * 4)), 0);
+          graphics.circle(x, y, 8 * factor);
 
           graphics.noErase();
           graphics.stroke(255, 255);

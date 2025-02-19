@@ -170,3 +170,11 @@ await fs.writeFile(
   `${import.meta.dirname}/../src/assets/atlasDisplay.png`,
   canvasElement.toBuffer("image/png"),
 );
+
+const numUnnamedSlices = slices.filter(
+  (slice) => !slice.name.startsWith("slice-"),
+);
+
+console.log(
+  `Generated ${slices.length} slices, ${numUnnamedSlices.length} unnamed`,
+);
