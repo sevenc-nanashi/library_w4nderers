@@ -43,6 +43,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
       state.currentFrame = audioElement.currentTime * frameRate;
     }
     p.background(bg);
+    p.noSmooth();
 
     for (const [path, { draw }] of Object.entries(renderers)) {
       p.push();
