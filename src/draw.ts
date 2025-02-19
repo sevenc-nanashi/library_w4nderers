@@ -3,7 +3,7 @@ import type { State } from "./state.ts";
 import { bg, fg, frameRate, songLength } from "./const.ts";
 import { midi } from "./midi.ts";
 import audio from "./assets/main.mp3?url";
-import { state as capturerState } from "p5-frame-capturer";
+import { state as capturerState, startCapturer } from "p5-frame-capturer";
 
 const renderers = import.meta.glob("./renderers/*.ts", {
   eager: true,
@@ -20,7 +20,12 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   if (!audioElement.paused && !state.playing) {
     audioElement.pause();
   }
-  if (audioElement.paused && state.playing && !capturerState.isCapturing && !disposed) {
+  if (
+    audioElement.paused &&
+    state.playing &&
+    !capturerState.isCapturing &&
+    !disposed
+  ) {
     audioElement.play();
     audioElement.currentTime = state.currentFrame / frameRate;
   }
@@ -82,6 +87,20 @@ const keydown = (p: p5, state: State) => (e: KeyboardEvent) => {
   }
   if (e.key === "ArrowDown") {
     audioElement.volume -= 0.1;
+  }
+  if (e.key === "r") {
+    startCapturer(p, {
+      format: "webpLossless",
+      frames: (audioElement.duration + 5) * frameRate,
+      parallelWriteLimit: 0,
+      onFinished: () => {
+        fetch(`https://ntfy.sh/${import.meta.env.VITE_NTFY_TOPIC}`, {
+          method: "POST",
+          body: "All frames are captured!",
+          mode: "no-cors",
+        });
+      },
+    });
   }
 };
 
