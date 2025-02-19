@@ -1,9 +1,11 @@
 precision highp float;
 
 uniform sampler2D u_texture;
+uniform sampler2D u_glowTexture;
 uniform vec2 u_resolution;
 uniform float u_pixelSize;
 uniform float u_wave;
+uniform float u_glowLevel;
 
 float pixelQuantize = 32.0;
 
@@ -21,6 +23,8 @@ void main() {
     }
   }
   color = floor(color * pixelQuantize) / pixelQuantize;
+  vec4 glow = texture2D(u_glowTexture, uv);
+  color = 1.0 - (1.0 - color) * (1.0 - glow * u_glowLevel);
 
   gl_FragColor = color;
 }

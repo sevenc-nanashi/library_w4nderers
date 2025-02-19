@@ -23,7 +23,7 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   );
   if (!activateNote) return;
   using _context = useRendererContext(p);
-  p.drawingContext.shadowColor = "#8888";
+  p.drawingContext.shadowColor = "#888f";
   p.drawingContext.shadowBlur = dotUnit;
   {
     using _context = useRendererContext(p);

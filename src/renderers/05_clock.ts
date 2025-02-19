@@ -205,6 +205,9 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           midi.header.ticksToMeasures(v.ticks) ===
             midi.header.ticksToMeasures(drum.ticks) + 1 && v.midi === drum.midi,
       );
+      const existsInCurrentMeasure = Math.floor(
+        midi.header.ticksToMeasures(drum.ticks),
+      ) === Math.floor(state.currentMeasure);
       const existsInPrevMeasure = drumsInCurrentMeasure.some(
         (v) =>
           midi.header.ticksToMeasures(v.ticks) ===
@@ -302,7 +305,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           break;
         }
         case "highTom": {
-          if (existsInNextMeasure) break;
+          if (!existsInCurrentMeasure) break;
           const factor =
             passedMeasures > 0 ? 1.5 - easeOutQuint(passedMeasures * 4) / 2 : 1;
           const angle = midi.header.ticksToMeasures(drum.ticks);
@@ -321,7 +324,7 @@ const drawDrum = (p: p5, state: State, size: number, activateNote: Note) => {
           break;
         }
         case "lowTom": {
-          if (existsInNextMeasure) break;
+          if (!existsInCurrentMeasure) break;
           const factor =
             passedMeasures > 0 ? 1.5 - easeOutQuint(passedMeasures * 4) / 2 : 1;
           const angle = midi.header.ticksToMeasures(drum.ticks);

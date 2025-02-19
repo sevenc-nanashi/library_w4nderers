@@ -39,12 +39,19 @@ export const draw = import.meta.hmrify((p: p5, state: State) => {
   const activeChord = chordTrack.notes.findLast(
     (note) =>
       state.currentTick >= note.ticks &&
-      state.currentTick < note.ticks + note.durationTicks,
+      state.currentTick < note.ticks + note.durationTicks
   );
   if (!activeChord) return;
 
+  const inactiveOverride = chordTrack.notes.find(
+    (note) =>
+      note.ticks <= state.currentTick &&
+      state.currentTick < note.ticks + note.durationTicks &&
+      note.midi === baseMidi - 1,
+  );
+  if (inactiveOverride) return;
+
   const index = activeChord.midi - baseMidi;
-  if (index === -1) return;
 
   const currentTick = state.currentTick;
   const progress =
